@@ -25,44 +25,62 @@ S3_STAGE_ZONE_BUCKET = s3.Bucket('pismo-stage-zone')
 S3_TRUSTED_ZONE_PATH = "s3://pismo-trusted-zone/events/"
 
 def define_date_columns(datasource):
-    datasource = datasource.withColumn("year", functions.year(functions.col("timestamp"))).withColumn("month", functions.month(functions.col("timestamp"))).withColumn("day", functions.dayofmonth(functions.col("timestamp")))
-    return datasource
+    try:
+        datasource = datasource.withColumn("year", functions.year(functions.col("timestamp"))).withColumn("month", functions.month(functions.col("timestamp"))).withColumn("day", functions.dayofmonth(functions.col("timestamp")))
+        return datasource
+    except:
+        print("An exception occurred at define_date_columns() method")
 
 def define_event_type(datasource):
-    datasource = datasource.toDF()
-    datasource = datasource.withColumn("domain_event_type", concat_ws("-","domain","event_type"))
-    return datasource
+    try:
+        datasource = datasource.toDF()
+        datasource = datasource.withColumn("domain_event_type", concat_ws("-","domain","event_type"))
+        return datasource
+    except:
+        print("An exception occurred at define_event_type() method")
 
 def save_to_trusted(datasource):
-    datasource.write.mode("overwrite").format("parquet").partitionBy("domain_event_type", "year", "month", "day").save(S3_TRUSTED_ZONE_PATH)
+    try:
+        datasource.write.mode("overwrite").format("parquet").partitionBy("domain_event_type", "year", "month", "day").save(S3_TRUSTED_ZONE_PATH)
+    except:
+        print("An exception occurred at save_to_trusted() method")
 
 def deduplicate(datasource):
-    datasource.registerTempTable("events")
-    datasource = sqlContext.sql(
-        '''
-            SELECT 
-                *
-            FROM (
+    try:
+        datasource.registerTempTable("events")
+        datasource = sqlContext.sql(
+            '''
                 SELECT 
-                    *,
-                    dense_rank() OVER (PARTITION BY event_id ORDER BY timestamp DESC) AS rank
-                FROM events
-            ) vo WHERE rank = 1
-        '''
-        )
-    datasource = datasource.drop(datasource.rank)
-    return datasource
- 
+                    *
+                FROM (
+                    SELECT 
+                        *,
+                        dense_rank() OVER (PARTITION BY event_id ORDER BY timestamp DESC) AS rank
+                    FROM events
+                ) vo WHERE rank = 1
+            '''
+            )
+        datasource = datasource.drop(datasource.rank)
+        return datasource
+    except:
+        print("An exception occurred at deduplicate() method")
+
 def erase_stage():
-    files = []
-    for object in S3_STAGE_ZONE_BUCKET.objects.filter(Prefix='events/'):
-        files.append(object.key)
-    files.pop(0)
-    for file in files:
-        s3.Object(S3_STAGE_ZONE_BUCKET.name, file).delete()
+    try:
+        files = []
+        for object in S3_STAGE_ZONE_BUCKET.objects.filter(Prefix='events/'):
+            files.append(object.key)
+        files.pop(0)
+        for file in files:
+            s3.Object(S3_STAGE_ZONE_BUCKET.name, file).delete()
+    except:
+        print("An exception occurred at erase_stage() method")
 
 def main():
-    datasource = glueContext.create_dynamic_frame.from_catalog(database = "pismo-stage-zone", table_name = "events")
+    try:
+        datasource = glueContext.create_dynamic_frame.from_catalog(database = "pismo-stage-zone", table_name = "events")
+    except:
+        print("An exception occurred at main() method")
     datasource = define_event_type(datasource)
     datasource = define_date_columns(datasource)
     datasource = deduplicate(datasource)
