@@ -44,4 +44,4 @@ consumir um conjunto de arquivos contendo uma amostra de eventos e separá-los
 em diretórios distintos por cada tipo evento.
 
 ## Solução
-A solução deste desafio encontra-se documentada no seguinte link: [Solution](https://github.com/giovani-anjos/event-distributor/blob/main/solution.pdf)
+A solução deste desafio encontra-se documentada no seguinte link: [Solution](https://raw.githubusercontent.com/giovani-anjos/event-distributor/main/solution.pdf)
